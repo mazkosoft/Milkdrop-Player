@@ -1,0 +1,31 @@
+name: Bug report / 错误反馈
+description: Report a reproducible playback, visualization or interface problem.
+body:
+  - type: markdown
+    attributes:
+      value: Do not attach private media or sensitive console output. For vulnerabilities, read SECURITY.md.
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and OS / 浏览器与系统
+      placeholder: Microsoft Edge version, Windows version
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Revision or release / 版本
+      description: Commit hash or release version, and file:// or hosted/local-server use.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps, expected and actual behavior / 复现步骤及预期与实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Console errors, screenshots and media codec / 错误、截图与媒体编码
+      description: Use generated or redistributable samples. Remove private filenames and paths.

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>Milkdrop-Player</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%23101d2b%22%2F%3E%3Cpath%20d%3D%22M7%2013v6m6-13v20m6-16v12m6-8v4%22%20stroke%3D%22%239bdcff%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E">
+    <script defer src="vendor/butterchurn.min.js"></script>
+    <script defer src="vendor/butterchurnPresets.min.js"></script>
+    <script defer src="wmplayer.playlist.js"></script>
+    <script defer src="wmplayer.slider.js"></script>
+    <script defer src="wmplayer.js"></script>
+    <style>
+        html, body { margin: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
+        wm-player { display: block; width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <wm-player id="wmP" data-theme="dark" class="show-playlist audio-mode"></wm-player>
+    <template id="visual-ui">
+        <canvas id="canvas" aria-hidden="true"></canvas>
+        <header id="top-actions" aria-label="播放器工具栏">
+            <div class="app-brand">
+                <svg class="app-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M7 13v6m6-13v20m6-16v12m6-8v4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+                <span class="app-name">Milkdrop-Player</span>
+            </div>
+            <span class="view-tab" aria-current="page">正在播放</span>
+            <div class="preset-group">
+                <label for="pSel">可视化预设</label>
+                <select id="pSel" disabled><option>正在加载预设…</option></select>
+            </div>
+            <div class="toolbar-actions">
+                <button class="btn btn-primary" id="add-media" type="button" title="添加媒体" aria-label="添加媒体">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3V7Zm0 0V5h7l2 2m0 5v4m-2-2h4"/></svg><span>添加媒体</span>
+                </button>
+                <button class="btn" id="immersive-toggle" type="button" aria-pressed="false" title="沉浸模式" aria-label="沉浸模式">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg><span>沉浸模式</span>
+                </button>
+                <button class="btn" id="playlist-toggle" type="button" aria-pressed="true" aria-expanded="true" aria-controls="playlist-panel" title="播放列表" aria-label="播放列表">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 5h18v14H3V5Zm12 0v14M6 9h5m-5 4h5"/></svg><span>播放列表</span>
+                </button>
+            </div>
+            <input type="file" id="f" multiple accept="audio/*,video/*,.mp3,.wav,.flac,.ogg,.m4a,.aac,.opus,.mp4,.webm,.mov,.mkv" hidden>
+        </header>
+        <div id="now-playing" aria-label="当前媒体">
+            <span class="track-orb" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M10 17V5l10-2v12M10 9l10-2"/><ellipse cx="7" cy="17" rx="3" ry="2.5"/><ellipse cx="17" cy="15" rx="3" ry="2.5"/></svg></span>
+            <div class="track-copy"><span id="track-state">等待添加媒体</span><strong id="track-title">尚未选择媒体</strong></div>
+            <div class="time-summary" aria-label="播放时间"><time id="elapsed">00:00</time><span>/</span><time id="duration">--:--</time></div>
+        </div>
+        <button id="reveal-controls" type="button">显示控制栏</button>
+        <button id="drawer-backdrop" type="button" tabindex="-1" aria-label="关闭播放列表" hidden></button>
+        <div id="welcome">
+            <div class="welcome-disc" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none"><path d="M16 27v10m8-20v30m8-38v46m8-34v22m8-16v10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></div>
+            <h1>让音乐成为画面</h1>
+            <p>选择本地音频，开启可视化；也可以播放视频。</p>
+            <button class="btn" id="welcome-add" type="button">选择媒体文件</button>
+        </div>
+        <p id="status" role="status" aria-live="polite" hidden></p>
+    </template>
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const p = document.getElementById('wmP');
+        if (!customElements.get('wm-player')) {
+            p.textContent = '播放器组件加载失败，请检查本地文件是否完整。';
+            p.style.cssText = 'color:white;padding:24px;box-sizing:border-box';
+            return;
+        }
+        const root = p.shadowRoot;
+        const main = root.querySelector('.main');
+        const content = root.querySelector('.content');
+        content.append(document.getElementById('visual-ui').content.cloneNode(true));
+        for (const id of ['top-actions', 'now-playing', 'reveal-controls', 'drawer-backdrop']) main.append(root.getElementById(id));
+        content.append(root.querySelector('.preset-group'));
+        const canvas = root.getElementById('canvas');
+        const media = root.querySelector('video');
+        const f = root.getElementById('f');
+        const sel = root.getElementById('pSel');
+        const status = root.getElementById('status');
+        const welcome = root.getElementById('welcome');
+        const playlistButton = root.getElementById('playlist-toggle');
+        let visualizer = null;
+        let audioContext = null;
+        let audioSource = null;
+        let animation = 0;
+        let sizeFrame = 0;
+        let width = 0;
+        let height = 0;
+        let visualizerFailed = false;
+        const objectURLs = new Set();
+        let restorePlaylist = false;
+        let wasFullscreen = false;
+        let immersive = false;
+        let playlistBeforeImmersive = false;
+        let idleTimer = 0;
+        let keyboardMode = false;
+        let chromeHovered = false;
+        const immersiveButton = root.getElementById('immersive-toggle');
+        const drawerBackdrop = root.getElementById('drawer-backdrop');
+        const trackTitle = root.getElementById('track-title');
+        const trackState = root.getElementById('track-state');
+        const elapsed = root.getElementById('elapsed');
+        const duration = root.getElementById('duration');
+        const narrow = window.matchMedia('(max-width: 700px)');
+        let desktopPlaylist = p.classList.contains('show-playlist');
+        if (narrow.matches) p.classList.remove('show-playlist');
+
+        function formatTime(seconds) {
+            if (!Number.isFinite(seconds) || seconds < 0) return '--:--';
+            const total = Math.floor(seconds);
+            const hours = Math.floor(total / 3600);
+            return (hours ? hours + ':' : '') + String(Math.floor(total / 60) % (hours ? 60 : Infinity)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+        }
+        function updateTime() {
+            elapsed.textContent = formatTime(media.currentTime);
+            duration.textContent = formatTime(media.duration);
+        }
+        function updateTrack() {
+            const active = root.querySelector('.playlist-item.active');
+            trackTitle.textContent = active?.title || '尚未选择媒体';
+            trackTitle.title = active?.title || '';
+            trackState.textContent = active ? (media.paused ? '已暂停' : '正在播放') : '等待添加媒体';
+            p.classList.toggle('is-playing', !media.paused && !!active);
+            updateTime();
+        }
+        function showChrome() {
+            p.classList.remove('is-idle');
+            clearTimeout(idleTimer);
+            if (!media.paused && !document.hidden && (immersive || document.fullscreenElement === p)) {
+                idleTimer = setTimeout(() => {
+                    const focused = root.activeElement;
+                    if (chromeHovered || (keyboardMode && focused) || focused === sel || !status.hidden) return;
+                    p.classList.add('is-idle');
+                }, 3500);
+            }
+        }
+        main.addEventListener('pointermove', event => {
+            chromeHovered = event.pointerType !== 'touch' && event.composedPath().some(node => node instanceof Element && node.matches('#top-actions, .preset-group, #now-playing, .controls, .seek, .playlist-container, .gutter-right'));
+            showChrome();
+        });
+        main.addEventListener('pointerleave', () => { chromeHovered = false; showChrome(); });
+        main.addEventListener('pointerdown', () => { keyboardMode = false; showChrome(); });
+        main.addEventListener('keydown', event => {
+            keyboardMode = true;
+            showChrome();
+            if (event.key === 'Escape' && narrow.matches && p.classList.contains('show-playlist')) {
+                p.classList.remove('show-playlist');
+                playlistButton.focus();
+            }
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Tab') { keyboardMode = true; showChrome(); }
+        }, true);
+        main.addEventListener('focusin', showChrome);
+        main.addEventListener('focusout', showChrome);
+        root.getElementById('reveal-controls').addEventListener('click', showChrome);
+        immersiveButton.addEventListener('click', () => {
+            immersive = !immersive;
+            immersiveButton.setAttribute('aria-pressed', String(immersive));
+            p.classList.toggle('immersive', immersive);
+            if (immersive) {
+                playlistBeforeImmersive = p.classList.contains('show-playlist');
+                p.classList.remove('show-playlist');
+            } else if (playlistBeforeImmersive) p.classList.add('show-playlist');
+            showChrome();
+        });
+        drawerBackdrop.addEventListener('click', () => { p.classList.remove('show-playlist'); playlistButton.focus(); });
+        narrow.addEventListener('change', event => {
+            if (event.matches) { desktopPlaylist = p.classList.contains('show-playlist'); p.classList.remove('show-playlist'); }
+            else if (desktopPlaylist && !immersive && !document.fullscreenElement) p.classList.add('show-playlist');
+            drawerBackdrop.hidden = !narrow.matches || !p.classList.contains('show-playlist');
+            showChrome();
+        });
+        p.addEventListener('playlist-change', updateTrack);
+        for (const event of ['loadedmetadata', 'durationchange', 'timeupdate', 'emptied']) media.addEventListener(event, updateTime);
+        for (const event of ['play', 'pause', 'ended']) media.addEventListener(event, () => { updateTrack(); showChrome(); });
+        updateTrack();
+
+        function notify(message, error = false) {
+            status.textContent = message;
+            status.hidden = !message;
+            status.classList.toggle('error', error);
+            showChrome();
+        }
+
+        let presets = {};
+        try {
+            if (!window.butterchurn?.default?.createVisualizer || !window.butterchurnPresets?.getPresets) {
+                throw new Error('missing visualizer library');
+            }
+            presets = butterchurnPresets.getPresets();
+            sel.replaceChildren(...Object.keys(presets).sort().map(name => new Option(name, name)));
+            sel.disabled = !sel.options.length;
+        } catch (error) {
+            sel.replaceChildren(new Option('可视化不可用', ''));
+            visualizerFailed = true;
+            notify('可视化依赖加载失败，仍可正常播放媒体。请检查 vendor 文件夹。', true);
+        }
+
+        function resizeVisualizer() {
+            sizeFrame = 0;
+            const nextWidth = Math.max(1, Math.round(content.clientWidth));
+            const nextHeight = Math.max(1, Math.round(content.clientHeight));
+            if (nextWidth === width && nextHeight === height) return;
+            width = nextWidth;
+            height = nextHeight;
+            canvas.width = width;
+            canvas.height = height;
+            if (visualizer) visualizer.setRendererSize(width, height);
+        }
+        function scheduleResize() {
+            if (!sizeFrame) sizeFrame = requestAnimationFrame(resizeVisualizer);
+        }
+        const resizeObserver = new ResizeObserver(scheduleResize);
+        resizeObserver.observe(content);
+        resizeVisualizer();
+
+        function shouldRender() {
+            return visualizer && !visualizerFailed && !media.paused && !media.ended &&
+                !document.hidden && p.classList.contains('audio-mode');
+        }
+        function render() {
+            animation = 0;
+            if (!shouldRender()) return;
+            try {
+                visualizer.render();
+                animation = requestAnimationFrame(render);
+            } catch (error) {
+                visualizerFailed = true;
+                canvas.hidden = true;
+                notify('可视化渲染失败，媒体播放将继续。', true);
+            }
+        }
+        function syncRendering() {
+            if (animation) cancelAnimationFrame(animation);
+            animation = 0;
+            if (shouldRender()) animation = requestAnimationFrame(render);
+        }
+        async function prepareAudio() {
+            if (visualizerFailed) return;
+            try {
+                // Keep the audio route intact even if WebGL/preset creation fails.
+                if (!audioContext) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    audioContext = new AudioContextClass();
+                    audioSource = audioContext.createMediaElementSource(media);
+                    audioSource.connect(audioContext.destination);
+                }
+                if (audioContext.state === 'suspended') await audioContext.resume();
+                if (!visualizer) {
+                    resizeVisualizer();
+                    visualizer = butterchurn.default.createVisualizer(audioContext, canvas, {
+                        width, height, pixelRatio: 1, textureSize: 1024
+                    });
+                    visualizer.connectAudio(audioSource);
+                    if (presets[sel.value]) visualizer.loadPreset(presets[sel.value], 0);
+                }
+                syncRendering();
+            } catch (error) {
+                visualizerFailed = true;
+                canvas.hidden = true;
+                notify('无法启动可视化，媒体播放将继续。', true);
+            }
+        }
+
+        function importFiles(files) {
+            let added = 0;
+            let skipped = 0;
+            const wasPaused = media.paused;
+            for (const file of files) {
+                const video = file.type.startsWith('video/') || /\.(mp4|webm|mov|mkv|avi|m4v)$/i.test(file.name);
+                const audio = file.type.startsWith('audio/') || /\.(mp3|wav|flac|ogg|m4a|aac|opus|wma|aiff)$/i.test(file.name);
+                if (!video && !audio) { skipped++; continue; }
+                const url = URL.createObjectURL(file);
+                try {
+                    p.addToPlaylist({src: url, audio_only: !video, metadata: {title: file.name}});
+                    objectURLs.add(url);
+                    added++;
+                } catch (error) {
+                    URL.revokeObjectURL(url);
+                    skipped++;
+                }
+            }
+            f.value = '';
+            if (added) {
+                welcome.hidden = true;
+                if (!visualizerFailed) notify(skipped ? `已添加 ${added} 个文件，跳过 ${skipped} 个不支持的文件。` : '');
+                if (wasPaused) p.play();
+            } else if (skipped) {
+                notify('未添加媒体，请选择音频或视频文件。', true);
+            }
+        }
+        root.getElementById('add-media').addEventListener('click', () => f.click());
+        root.getElementById('welcome-add').addEventListener('click', () => f.click());
+        playlistButton.addEventListener('click', () => {
+            if (immersive) {
+                immersive = false;
+                immersiveButton.setAttribute('aria-pressed', 'false');
+                p.classList.remove('immersive');
+            }
+            p.togglePlaylist();
+            showChrome();
+        });
+        f.addEventListener('change', () => importFiles(Array.from(f.files)));
+        sel.addEventListener('change', () => {
+            if (!visualizer || !presets[sel.value] || visualizerFailed) return;
+            try { visualizer.loadPreset(presets[sel.value], 1.5); }
+            catch (error) { notify('此预设加载失败，请尝试其他预设。', true); }
+        });
+        media.addEventListener('play', () => {
+            welcome.hidden = true;
+            if (!visualizerFailed) notify('');
+            if (p.classList.contains('audio-mode')) prepareAudio();
+        });
+        media.addEventListener('playing', syncRendering);
+        for (const event of ['pause', 'ended', 'emptied']) media.addEventListener(event, syncRendering);
+        p.addEventListener('fullscreen-error', () => notify('无法进入全屏，请在浏览器中重试。', true));
+        p.addEventListener('playback-error', () => notify('播放失败，请重新播放或选择其他媒体文件。', true));
+        media.addEventListener('error', () => {
+            syncRendering();
+            notify('无法播放此文件，文件可能损坏或格式不受浏览器支持。', true);
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && !media.paused && p.classList.contains('audio-mode')) prepareAudio();
+            syncRendering();
+        });
+        const classObserver = new MutationObserver(() => {
+            const open = p.classList.contains('show-playlist');
+            playlistButton.setAttribute('aria-pressed', String(open));
+            playlistButton.setAttribute('aria-expanded', String(open));
+            drawerBackdrop.hidden = !narrow.matches || !open;
+            scheduleResize();
+            syncRendering();
+        });
+        classObserver.observe(p, {attributes: true, attributeFilter: ['class']});
+        playlistButton.setAttribute('aria-pressed', String(p.classList.contains('show-playlist')));
+        playlistButton.setAttribute('aria-expanded', String(p.classList.contains('show-playlist')));
+        document.addEventListener('fullscreenchange', () => {
+            const fullscreen = document.fullscreenElement === p;
+            if (fullscreen && !wasFullscreen) {
+                restorePlaylist = p.classList.contains('show-playlist');
+                p.classList.remove('show-playlist');
+            } else if (!fullscreen && wasFullscreen && restorePlaylist) {
+                p.classList.add('show-playlist');
+            }
+            wasFullscreen = fullscreen;
+            showChrome();
+            scheduleResize();
+        });
+        canvas.addEventListener('webglcontextlost', event => {
+            event.preventDefault();
+            visualizerFailed = true;
+            canvas.hidden = true;
+            syncRendering();
+            notify('可视化图形上下文已丢失，请刷新页面重试。媒体播放不受影响。', true);
+        });
+        window.addEventListener('pagehide', event => {
+            if (event.persisted) return;
+            clearTimeout(idleTimer);
+            if (animation) cancelAnimationFrame(animation);
+            if (sizeFrame) cancelAnimationFrame(sizeFrame);
+            resizeObserver.disconnect();
+            classObserver.disconnect();
+            for (const url of objectURLs) URL.revokeObjectURL(url);
+            if (audioContext) audioContext.close().catch(() => {});
+        });
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+{
+  "upstream": "https://github.com/DavidJCobb/wmp-svg",
+  "revision": "84df38f3cebcc0d6d34547b60afd1beb5dbec3d7",
+  "checkedDate": "2026-10-17",
+  "licenseFoundInTree": false,
+  "files": [
+    {
+      "file": "spritesheet-generic.svg",
+      "upstreamPath": "src/spritesheet-generic.svg",
+      "comparison": "exact after CRLF normalization",
+      "sha256": "0d3a9ede237572fc7f8a485efd95ad52dbaf6dfa78e05bf2054526ae293efcdb"
+    },
+    {
+      "file": "spritesheet-glyphs-general.svg",
+      "upstreamPath": "src/spritesheet-glyphs-general.svg",
+      "comparison": "exact after CRLF normalization",
+      "sha256": "51afaadac1b74861ee79c90338b8869e793b9a9f059bae4180c8d02df3a0bffc"
+    },
+    {
+      "file": "spritesheet-glyphs-next.svg",
+      "upstreamPath": "src/spritesheet-glyphs-next.svg",
+      "comparison": "exact after CRLF normalization",
+      "sha256": "0eb4137be65ee1816adc8d9a71c1deb91a1084ec84b2430d0746415f2678c895"
+    },
+    {
+      "file": "spritesheet-glyphs-play-pause.svg",
+      "upstreamPath": "src/spritesheet-glyphs-play-pause.svg",
+      "comparison": "exact after CRLF normalization",
+      "sha256": "e465d53e65a1439489056666ad6ebf686aa54487ba68da41c6c23fc5832901fa"
+    },
+    {
+      "file": "spritesheet-jewel.svg",
+      "upstreamPath": "src/spritesheet-jewel.svg",
+      "comparison": "exact after CRLF normalization",
+      "sha256": "832684ff1bc7745449420e46a68f350fffbe16b55ece072926ba8ddc383820ae"
+    },
+    {
+      "file": "spritesheet-next.svg",
+      "upstreamPath": "src/spritesheet-next.svg",
+      "comparison": "exact after CRLF normalization",
+      "sha256": "7be7ee0925bfed09d5d076a6450631f1c11113f33728be262936de7473bb0138"
+    },
+    {
+      "file": "spritesheet-slider-thumb.svg",
+      "upstreamPath": "src/spritesheet-slider-thumb.svg",
+      "comparison": "exact after CRLF normalization",
+      "sha256": "f3160b2962834841bba6ef85fa7ea99641e742bdaad46fed93d2902038c6745e"
+    },
+    {
+      "file": "spritesheet-tray-background-dark.svg",
+      "upstreamPath": "src/spritesheet-tray-background-dark.svg",
+      "comparison": "exact after CRLF normalization",
+      "sha256": "980b413f8f0e9b2d9c8fb82b50ea176a411b148a1ecbbb037d71eab2d5f7753b"
+    },
+    {
+      "file": "spritesheet-tray-background-non-overlay.svg",
+      "upstreamPath": "src/spritesheet-tray-background-non-overlay.svg",
+      "comparison": "exact after CRLF normalization",
+      "sha256": "9bd9c74df4ab07b9131f3e37a09893899561fdcec027877cd5d335748c6ef69c"
+    },
+    {
+      "file": "spritesheet-tray-background-overlay.svg",
+      "upstreamPath": "src/spritesheet-tray-background-overlay.svg",
+      "comparison": "exact after CRLF normalization",
+      "sha256": "abe67561f02644ccbfaf8cdbb5bc3454cd9cbb50841377bf6dd1e75ae91fc146"
+    },
+    {
+      "file": "wmplayer.buttons.css",
+      "upstreamPath": "src/wmplayer.buttons.css",
+      "comparison": "exact after CRLF normalization",
+      "sha256": "bc55ce333a647776ff1712360eaf09a7c016d1e661e2ca0f1a001c4aa72b931b"
+    },
+    {
+      "file": "wmplayer.css",
+      "upstreamPath": "src/wmplayer.css",
+      "comparison": "locally modified",
+      "sha256": "d88678e30b3f3adf833b828f618310ebae0752e07208f327712a0143c6a3afca"
+    },
+    {
+      "file": "wmplayer.js",
+      "upstreamPath": "src/wmplayer.js",
+      "comparison": "locally modified",
+      "sha256": "c518ad49b4669f07a2f4e94a26b08b2b38105dd6ee89e99542907473ba93ece7"
+    },
+    {
+      "file": "wmplayer.playlist.js",
+      "upstreamPath": "src/wmplayer.playlist.js",
+      "comparison": "exact after CRLF normalization",
+      "sha256": "41206e1c9cd64a811cb5d0393b91fe6ab1c11a82601b4c1f7fd71b3eb9cae29a"
+    },
+    {
+      "file": "wmplayer.slider.css",
+      "upstreamPath": "src/wmplayer.slider.css",
+      "comparison": "exact after CRLF normalization",
+      "sha256": "61a5026f12afb8cff1e618d4c6cf4f7d38722a720d6aef9aa4ecd9070143e37d"
+    },
+    {
+      "file": "wmplayer.slider.js",
+      "upstreamPath": "src/wmplayer.slider.js",
+      "comparison": "locally modified (stylesheet URL normalization)",
+      "sha256": "67a66a901591e65aeb852cba290241aefa003510e46f655e9af5501d27202e3e"
+    }
+  ]
+}

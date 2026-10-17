@@ -1,0 +1,15 @@
+name: Feature request / 功能建议
+description: Describe the playback or visualization task you want to improve.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case / 使用场景
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior and alternatives / 方案与替代方式
+    validations:
+      required: true
